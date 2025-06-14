@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgis/postgis
+    container_name: lead-catcher-db-compose
+    env_file:
+      - ./batch/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./ddl.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    container_name: lead-catcher-backend-compose
+    build:
+      context: ./backend
+    env_file:
+      - ./batch/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    container_name: lead-catcher-frontend-compose
+    build:
+      context: ./frontend
+    environment:
+      API_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    restart: always
+
+  # --- ▼▼▼ 新しいサービスを追加 ▼▼▼ ---
+  batch:
+    build:
+      context: . # プロジェクトルートからビルド
+      dockerfile: batch/Dockerfile # 作成したDockerfileを指定
+    container_name: lead-catcher-batch-job
+    env_file:
+      - ./batch/.env
+    # 実行後もファイル変更を反映させるためマウント
+    volumes:
+      - ./batch:/app/batch
+    # DBが起動してから実行するように依存関係を設定
+    depends_on:
+      - db
+  # --- ▲▲▲ ここまで ▲▲▲ ---
+
+volumes:
+  postgres_data:

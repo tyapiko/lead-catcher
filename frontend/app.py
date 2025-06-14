@@ -2,9 +2,12 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import date
+import os # osモジュールをインポート
 
-# APIのエンドポイントURL
-API_URL = "http://127.0.0.1:8000/corporations"
+# --- ▼▼▼ 変更点 ▼▼▼ ---
+# 環境変数からAPIのURLを取得。なければデフォルト値を使う。
+API_URL = os.getenv("API_URL", "http://localhost:8000") + "/corporations"
+# --- ▲▲▲ ここまで ▲▲▲ ---
 
 # ページの基本設定
 st.set_page_config(
@@ -18,7 +21,6 @@ st.set_page_config(
 def fetch_data_from_api(prefecture: str | None, start_date: date | None, end_date: date | None):
     """
     バックエンドAPIから法人情報を取得し、Pandas DataFrameとして返す関数。
-    フィルタリング条件を引数として受け取る。
     """
     params = {}
     if prefecture:
@@ -41,14 +43,12 @@ def fetch_data_from_api(prefecture: str | None, start_date: date | None, end_dat
 
 # --- サイドバー (入力フォーム) ---
 st.sidebar.header("絞り込み検索 🔎")
-
 pref_input = st.sidebar.text_input("都道府県名で検索", placeholder="例: 東京都")
 start_date_input = st.sidebar.date_input("設立日（開始）", value=None)
 end_date_input = st.sidebar.date_input("設立日（終了）", value=None)
 
 # --- メイン画面 (表示エリア) ---
 st.title("✨ Lead Catcher: 新規法人情報")
-
 corporations_data = fetch_data_from_api(pref_input, start_date_input, end_date_input)
 
 if corporations_data is not None:
@@ -57,26 +57,19 @@ if corporations_data is not None:
     else:
         df = pd.DataFrame(corporations_data)
         
-        # --- ▼▼▼ 地図表示機能を追加 ▼▼▼ ---
         st.subheader("📍 法人所在地マップ")
-        
-        # 地図表示用に、緯度(latitude)と経度(longitude)が欠けているデータを除外
         df_map = df.dropna(subset=['latitude', 'longitude'])
         
         if not df_map.empty:
-            # st.mapに緯度・経度情報を含むDataFrameを渡す
             st.map(df_map)
         else:
             st.info("地図に表示できる位置情報を持つ法人がありません。")
-        # --- ▲▲▲ ここまで ▲▲▲ ---
         
         st.subheader("📄 法人情報一覧")
         display_columns = ["name", "location", "establishment_date", "business_category"]
         df_display = df[[col for col in display_columns if col in df.columns]]
         
         st.write(f"**{len(df_display)}** 件の法人情報が見つかりました。")
-        # 地図を表示する分、表の高さを少し調整
         st.dataframe(df_display, use_container_width=True, height=400)
 else:
     st.warning("データを表示できませんでした。")
-
