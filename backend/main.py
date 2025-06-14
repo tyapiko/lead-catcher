@@ -2,12 +2,12 @@ import os
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import DictCursor
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import date
-import decimal # Decimal型を扱うためにインポート
+import decimal
 
 # --- 準備 ---
 dotenv_path = os.path.join(os.path.dirname(__file__), '../batch/.env')
@@ -48,7 +48,6 @@ class Corporation(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-    # Pydantic V2との互換性のための修正
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -75,33 +74,58 @@ def read_root():
     return {"message": "Welcome to Lead Catcher API!"}
 
 @app.get("/corporations", response_model=List[Corporation])
-def get_corporations():
+def get_corporations(
+    prefecture: Optional[str] = Query(None, description="都道府県名でフィルタリング（例: 東京都）"),
+    start_date: Optional[date] = Query(None, description="設立日の開始日でフィルタリング（YYYY-MM-DD）"),
+    end_date: Optional[date] = Query(None, description="設立日の終了日でフィルタリング（YYYY-MM-DD）")
+):
     """
     データベースに登録されている法人情報の一覧を取得します。
-    最新の設立日から100件を返します。
+    都道府県や設立日でフィルタリングできます。
     """
-    conn = None # finallyブロックで参照できるよう、外で初期化
+    conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute(
-                """
+            # ベースとなるSQLクエリ
+            base_query = """
                 SELECT 
                     corporate_number, name, location, establishment_date, 
                     business_category, latitude, longitude 
-                FROM corporations 
-                ORDER BY establishment_date DESC NULLS LAST 
-                LIMIT 100;
-                """
-            )
+                FROM corporations
+            """
+            
+            # WHERE句の条件とパラメータを動的に構築
+            where_clauses = []
+            params = {}
+            
+            # ddl.sqlにはprefectureカラムがないため、locationでフィルタリング
+            if prefecture:
+                where_clauses.append("location LIKE %(prefecture)s")
+                params['prefecture'] = f"%{prefecture}%" # 部分一致で検索
+            
+            if start_date:
+                where_clauses.append("establishment_date >= %(start_date)s")
+                params['start_date'] = start_date
+            
+            if end_date:
+                where_clauses.append("establishment_date <= %(end_date)s")
+                params['end_date'] = end_date
+            
+            # WHERE句を結合
+            query = base_query
+            if where_clauses:
+                query += " WHERE " + " AND ".join(where_clauses)
+            
+            # ORDER BY と LIMIT を追加
+            query += " ORDER BY establishment_date DESC NULLS LAST LIMIT 100;"
+            
+            cur.execute(query, params)
             db_results = cur.fetchall()
             
-            # ▼▼▼ 重要な修正 ▼▼▼
-            # DBからの結果をPydanticモデルに安全に変換する
             corporations_list = []
             for row in db_results:
                 row_dict = dict(row)
-                # Decimal型をfloatに明示的に変換
                 if isinstance(row_dict.get('latitude'), decimal.Decimal):
                     row_dict['latitude'] = float(row_dict['latitude'])
                 if isinstance(row_dict.get('longitude'), decimal.Decimal):
@@ -111,10 +135,8 @@ def get_corporations():
             return corporations_list
             
     except psycopg2.Error as e:
-        # DB操作に関するエラー
         raise HTTPException(status_code=500, detail=f"データベースクエリエラー: {e}")
     except Exception as e:
-        # データ変換など、その他の予期せぬエラー
         raise HTTPException(status_code=500, detail=f"サーバー内部エラー: {e}")
     finally:
         if conn:
