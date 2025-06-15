@@ -35,5 +35,8 @@ jobs:
           echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ./batch/.env
 
       # 3. Docker Composeでバッチ処理を実行
+      # --- ▼▼▼ 修正点 ▼▼▼ ---
+      # 'docker-compose' を 'docker compose' に変更
       - name: Run batch job
-        run: docker-compose run --rm batch
+        run: docker compose run --rm batch
+      # --- ▲▲▲ ここまで ▲▲▲ ---
