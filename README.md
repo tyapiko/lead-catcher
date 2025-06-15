@@ -102,8 +102,43 @@ graph TD
 
         Batch -->|データ取得| gBizINFO[gBizINFO API]
         Batch -->|データ保存| DB
-
-        GHA -->|トリガー| Batch
     end
+    
+    GHA -->|トリガー| Batch
+    linkStyle 8 stroke:#ff7878,stroke-width:2px,stroke-dasharray: 5 5;
+```
 
-    linkStyle 9 stroke:#ff7878,stroke-width:2px,stroke-dasharray: 5 5;
+---
+
+## 📂 ディレクトリ構成
+
+```
+.
+├── .github/workflows/          # GitHub Actionsのワークフロー定義
+│   └── scheduler.yml
+├── backend/                    # バックエンド (FastAPI)
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── main.py
+├── batch/                      # データ収集バッチ
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── collect_data.py
+├── frontend/                   # フロントエンド (Streamlit)
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── app.py
+├── docker-compose.yml          # 全体の組立説明書
+├── ddl.sql                     # データベースのテーブル設計図
+└── README.md                   # このファイル
+```
+
+---
+
+## 🌱 今後の改善案
+
+* **全件取得対応**: gBizINFO APIのページネーションに対応し、100件以上のデータも全件取得できるようにする。
+* **フィルタリング強化**: 「業種」での絞り込み機能を追加する。
+* **トレンド可視化**: 「業種別の設立件数」などをグラフで可視化する機能を追加する。
+* **クラウドへのデプロイ**: AWS FargateやGCP Cloud Runなどにデプロイし、インターネット上に公開する。
