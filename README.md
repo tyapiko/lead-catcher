@@ -39,16 +39,16 @@
 
 1.  **リポジトリをクローン**
     ```bash
-    git clone [https://github.com/あなたのユーザー名/lead-catcher.git](https://github.com/あなたのユーザー名/lead-catcher.git)
+    git clone [https://github.com/tyapiko/lead-catcher.git]
     cd lead-catcher
     ```
 
 2.  **`.env`ファイルの作成**
-    `batch`ディレクトリに`batch/.env.example`というサンプルファイルがあります。これをコピーして`batch/.env`を作成し、あなたのgBizINFOのAPIキーを設定してください。
+    `batch`ディレクトリに`.env`ファイルを作成し、あなたのgBizINFOのAPIキーを設定してください。
     ```bash
-    cp batch/.env.example batch/.env
+    nano batch/.env
     ```
-    エディタで`batch/.env`を開き、`GBIZINFO_API_KEY`の値を設定します。
+    `batch/.env`を開き、`GBIZINFO_API_KEY`の値を設定します。
     ```dotenv
     # batch/.env
     GBIZINFO_API_KEY="ここにあなたのAPIキーを貼り付け"
