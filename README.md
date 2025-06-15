@@ -81,12 +81,12 @@
 
 ```mermaid
 graph TD
-    subgraph GitHub Actions (毎日AM2:00)
+    subgraph "GitHub Actions (毎日AM2:00)"
         GHA[batchコンテナを起動]
     end
 
-    subgraph User's PC (Docker Compose)
-        subgraph Services
+    subgraph "User's PC (Docker Compose)"
+        subgraph "Services"
             Frontend[Frontend (Streamlit)]
             Backend[Backend (FastAPI)]
             Batch[Batch (Python Script)]
