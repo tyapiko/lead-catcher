@@ -79,7 +79,7 @@
 
 このアプリケーションは、以下の4つの独立したコンテナが連携して動作しています。
 
-```mermaid
+```
 graph TD
     subgraph "GitHub Actions (毎日AM2:00)"
         GHA[batchコンテナを起動]
