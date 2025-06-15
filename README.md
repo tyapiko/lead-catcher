@@ -123,7 +123,7 @@ graph TD
 ├── batch/                      # データ収集バッチ
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── .env.example
+│   ├── .env
 │   └── collect_data.py
 ├── frontend/                   # フロントエンド (Streamlit)
 │   ├── Dockerfile
